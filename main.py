@@ -1,6 +1,6 @@
 """
 Модуль main.py
-Точка входа в приложение. Содержит графический интерфейс для работы с книгами.
+Точка входа в приложение. Полная версия с функцией обмена книгами.
 """
 
 import tkinter as tk
@@ -8,6 +8,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from database import db
 from auth import auth
 from books import book_manager
+from exchanges import exchange_manager
 from utils import hash_password, verify_password
 
 
@@ -212,7 +213,7 @@ class MainWindow:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Книгообмен - Главное окно")
-        self.window.geometry("900x600")
+        self.window.geometry("1000x700")
 
         # Создаем вкладки
         self.notebook = ttk.Notebook(self.window)
@@ -231,6 +232,21 @@ class MainWindow:
         self.my_books_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.my_books_tab, text="📖 Мои книги")
         self.setup_my_books_tab()
+
+        # Вкладка "Входящие запросы"
+        self.incoming_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.incoming_tab, text="📩 Входящие запросы")
+        self.setup_incoming_tab()
+
+        # Вкладка "Исходящие запросы"
+        self.outgoing_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.outgoing_tab, text="📤 Исходящие запросы")
+        self.setup_outgoing_tab()
+
+        # Вкладка "История обменов"
+        self.history_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.history_tab, text="📜 История обменов")
+        self.setup_history_tab()
 
         # Вкладка "Добавить книгу"
         self.add_book_tab = ttk.Frame(self.notebook)
@@ -293,6 +309,7 @@ class MainWindow:
         btn_frame.pack(fill="x", padx=10, pady=5)
 
         ttk.Button(btn_frame, text="📩 Запросить обмен", command=self.request_exchange).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="🔄 Обновить", command=self.load_catalog).pack(side="left", padx=5)
 
         # Загружаем данные
         self.load_catalog()
@@ -332,6 +349,110 @@ class MainWindow:
 
         # Загружаем данные
         self.load_my_books()
+
+    def setup_incoming_tab(self):
+        """Настройка вкладки входящих запросов"""
+        # Таблица с входящими запросами
+        columns = ("id", "book", "author", "requester", "requested_at")
+        self.incoming_tree = ttk.Treeview(self.incoming_tab, columns=columns, show="headings", height=15)
+
+        self.incoming_tree.heading("id", text="ID")
+        self.incoming_tree.heading("book", text="Книга")
+        self.incoming_tree.heading("author", text="Автор")
+        self.incoming_tree.heading("requester", text="Запрашивает")
+        self.incoming_tree.heading("requested_at", text="Дата запроса")
+
+        self.incoming_tree.column("id", width=50)
+        self.incoming_tree.column("book", width=250)
+        self.incoming_tree.column("author", width=150)
+        self.incoming_tree.column("requester", width=120)
+        self.incoming_tree.column("requested_at", width=150)
+
+        scrollbar = ttk.Scrollbar(self.incoming_tab, orient="vertical", command=self.incoming_tree.yview)
+        self.incoming_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.incoming_tree.pack(side="left", fill="both", expand=True, padx=(10, 0), pady=10)
+        scrollbar.pack(side="right", fill="y", padx=(0, 10), pady=10)
+
+        # Кнопки управления
+        btn_frame = ttk.Frame(self.incoming_tab)
+        btn_frame.pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="✅ Принять", command=self.accept_request).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="❌ Отклонить", command=self.reject_request).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="🔄 Обновить", command=self.load_incoming).pack(side="left", padx=5)
+
+        # Загружаем данные
+        self.load_incoming()
+
+    def setup_outgoing_tab(self):
+        """Настройка вкладки исходящих запросов"""
+        # Таблица с исходящими запросами
+        columns = ("id", "book", "author", "owner", "requested_at")
+        self.outgoing_tree = ttk.Treeview(self.outgoing_tab, columns=columns, show="headings", height=15)
+
+        self.outgoing_tree.heading("id", text="ID")
+        self.outgoing_tree.heading("book", text="Книга")
+        self.outgoing_tree.heading("author", text="Автор")
+        self.outgoing_tree.heading("owner", text="Владелец")
+        self.outgoing_tree.heading("requested_at", text="Дата запроса")
+
+        self.outgoing_tree.column("id", width=50)
+        self.outgoing_tree.column("book", width=250)
+        self.outgoing_tree.column("author", width=150)
+        self.outgoing_tree.column("owner", width=120)
+        self.outgoing_tree.column("requested_at", width=150)
+
+        scrollbar = ttk.Scrollbar(self.outgoing_tab, orient="vertical", command=self.outgoing_tree.yview)
+        self.outgoing_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.outgoing_tree.pack(side="left", fill="both", expand=True, padx=(10, 0), pady=10)
+        scrollbar.pack(side="right", fill="y", padx=(0, 10), pady=10)
+
+        # Кнопки управления
+        btn_frame = ttk.Frame(self.outgoing_tab)
+        btn_frame.pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="❌ Отменить запрос", command=self.cancel_request).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="🔄 Обновить", command=self.load_outgoing).pack(side="left", padx=5)
+
+        # Загружаем данные
+        self.load_outgoing()
+
+    def setup_history_tab(self):
+        """Настройка вкладки истории обменов"""
+        # Таблица с историей
+        columns = ("id", "direction", "book", "author", "other_user", "completed_at")
+        self.history_tree = ttk.Treeview(self.history_tab, columns=columns, show="headings", height=20)
+
+        self.history_tree.heading("id", text="ID")
+        self.history_tree.heading("direction", text="Тип")
+        self.history_tree.heading("book", text="Книга")
+        self.history_tree.heading("author", text="Автор")
+        self.history_tree.heading("other_user", text="С кем")
+        self.history_tree.heading("completed_at", text="Дата завершения")
+
+        self.history_tree.column("id", width=50)
+        self.history_tree.column("direction", width=80)
+        self.history_tree.column("book", width=250)
+        self.history_tree.column("author", width=150)
+        self.history_tree.column("other_user", width=150)
+        self.history_tree.column("completed_at", width=150)
+
+        scrollbar = ttk.Scrollbar(self.history_tab, orient="vertical", command=self.history_tree.yview)
+        self.history_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.history_tree.pack(side="left", fill="both", expand=True, padx=(10, 0), pady=10)
+        scrollbar.pack(side="right", fill="y", padx=(0, 10), pady=10)
+
+        # Кнопки управления
+        btn_frame = ttk.Frame(self.history_tab)
+        btn_frame.pack(fill="x", padx=10, pady=5)
+
+        ttk.Button(btn_frame, text="🔄 Обновить", command=self.load_history).pack(side="left", padx=5)
+
+        # Загружаем данные
+        self.load_history()
 
     def setup_add_book_tab(self):
         """Настройка вкладки добавления книги"""
@@ -383,7 +504,7 @@ class MainWindow:
 
     def setup_stats_tab(self):
         """Настройка вкладки статистики"""
-        self.stats_text = scrolledtext.ScrolledText(self.stats_tab, font=("Courier", 10), height=20)
+        self.stats_text = scrolledtext.ScrolledText(self.stats_tab, font=("Courier", 10), height=25)
         self.stats_text.pack(fill="both", expand=True, padx=20, pady=20)
 
         ttk.Button(self.stats_tab, text="Обновить статистику", command=self.load_stats).pack(pady=10)
@@ -465,6 +586,60 @@ class MainWindow:
                 item['added_at']
             ))
 
+    def load_incoming(self):
+        """Загрузка входящих запросов"""
+        # Очищаем таблицу
+        for item in self.incoming_tree.get_children():
+            self.incoming_tree.delete(item)
+
+        requests = exchange_manager.get_incoming_requests()
+
+        for req in requests:
+            self.incoming_tree.insert("", "end", values=(
+                req['id'],
+                req['title'],
+                req['author'],
+                req['requester_name'],
+                req['requested_at']
+            ))
+
+    def load_outgoing(self):
+        """Загрузка исходящих запросов"""
+        # Очищаем таблицу
+        for item in self.outgoing_tree.get_children():
+            self.outgoing_tree.delete(item)
+
+        requests = exchange_manager.get_outgoing_requests()
+
+        for req in requests:
+            self.outgoing_tree.insert("", "end", values=(
+                req['id'],
+                req['title'],
+                req['author'],
+                req['owner_name'],
+                req['requested_at']
+            ))
+
+    def load_history(self):
+        """Загрузка истории обменов"""
+        # Очищаем таблицу
+        for item in self.history_tree.get_children():
+            self.history_tree.delete(item)
+
+        history = exchange_manager.get_history()
+
+        direction_map = {"Исходящий": "📤 Отдал", "Входящий": "📥 Получил"}
+
+        for record in history:
+            self.history_tree.insert("", "end", values=(
+                record['id'],
+                direction_map.get(record['direction'], record['direction']),
+                record['title'],
+                record['author'],
+                record['other_user'],
+                record['completed_at']
+            ))
+
     def search_books(self):
         """Поиск книг в каталоге"""
         keyword = self.search_entry.get().strip()
@@ -479,7 +654,6 @@ class MainWindow:
         # Ищем книги (только доступные, не свои)
         all_books = book_manager.search_books(keyword)
 
-        # Для каждой найденной книги ищем доступные экземпляры
         status_map = {"available": "Доступна", "pending": "В обмене", "exchanged": "Обменена"}
         condition_map = {"new": "Новая", "good": "Хорошее", "fair": "Удовл.", "poor": "Плохое"}
 
@@ -507,6 +681,79 @@ class MainWindow:
         """Очистка поиска"""
         self.search_entry.delete(0, tk.END)
         self.load_catalog()
+
+    def request_exchange(self):
+        """Запрос на обмен"""
+        selected = self.catalog_tree.selection()
+        if not selected:
+            messagebox.showwarning("Внимание", "Выберите книгу для запроса")
+            return
+
+        item_id = self.catalog_tree.item(selected[0])['values'][0]
+
+        if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите запросить эту книгу?"):
+            success, message = exchange_manager.create_request(item_id)
+            if success:
+                messagebox.showinfo("Успех", message)
+                self.load_catalog()
+                self.load_outgoing()
+            else:
+                messagebox.showerror("Ошибка", message)
+
+    def accept_request(self):
+        """Принять запрос на обмен"""
+        selected = self.incoming_tree.selection()
+        if not selected:
+            messagebox.showwarning("Внимание", "Выберите запрос")
+            return
+
+        request_id = self.incoming_tree.item(selected[0])['values'][0]
+
+        if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите принять этот запрос?"):
+            success, message = exchange_manager.respond_to_request(request_id, accept=True)
+            if success:
+                messagebox.showinfo("Успех", message)
+                self.load_incoming()
+                self.load_my_books()
+                self.load_history()
+            else:
+                messagebox.showerror("Ошибка", message)
+
+    def reject_request(self):
+        """Отклонить запрос на обмен"""
+        selected = self.incoming_tree.selection()
+        if not selected:
+            messagebox.showwarning("Внимание", "Выберите запрос")
+            return
+
+        request_id = self.incoming_tree.item(selected[0])['values'][0]
+
+        if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите отклонить этот запрос?"):
+            success, message = exchange_manager.respond_to_request(request_id, accept=False)
+            if success:
+                messagebox.showinfo("Успех", message)
+                self.load_incoming()
+                self.load_my_books()
+            else:
+                messagebox.showerror("Ошибка", message)
+
+    def cancel_request(self):
+        """Отменить исходящий запрос"""
+        selected = self.outgoing_tree.selection()
+        if not selected:
+            messagebox.showwarning("Внимание", "Выберите запрос")
+            return
+
+        request_id = self.outgoing_tree.item(selected[0])['values'][0]
+
+        if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите отменить этот запрос?"):
+            success, message = exchange_manager.cancel_request(request_id)
+            if success:
+                messagebox.showinfo("Успех", message)
+                self.load_outgoing()
+                self.load_catalog()
+            else:
+                messagebox.showerror("Ошибка", message)
 
     def add_book(self):
         """Добавление книги"""
@@ -541,6 +788,7 @@ class MainWindow:
                 self.clear_add_form()
                 self.load_my_books()
                 self.load_catalog()
+                self.load_stats()
             else:
                 messagebox.showwarning("Внимание", f"{message}\nНо не удалось добавить экземпляр: {message2}")
         else:
@@ -552,6 +800,7 @@ class MainWindow:
                     self.clear_add_form()
                     self.load_my_books()
                     self.load_catalog()
+                    self.load_stats()
                 else:
                     messagebox.showerror("Ошибка", message2)
             else:
@@ -581,36 +830,40 @@ class MainWindow:
                 messagebox.showinfo("Успех", message)
                 self.load_my_books()
                 self.load_catalog()
+                self.load_stats()
             else:
                 messagebox.showerror("Ошибка", message)
 
-    def request_exchange(self):
-        """Запрос на обмен (заглушка, будет реализовано в следующем модуле)"""
-        selected = self.catalog_tree.selection()
-        if not selected:
-            messagebox.showwarning("Внимание", "Выберите книгу для запроса")
-            return
-
-        item_id = self.catalog_tree.item(selected[0])['values'][0]
-        messagebox.showinfo("Информация", f"Функция запроса обмена для книги ID={item_id} будет реализована в следующем модуле")
-
     def load_stats(self):
         """Загрузка статистики"""
-        stats = book_manager.get_statistics()
+        book_stats = book_manager.get_statistics()
+        exchange_stats = exchange_manager.get_statistics()
 
         self.stats_text.delete("1.0", tk.END)
         self.stats_text.insert("1.0", """
-╔════════════════════════════════════════╗
-║        📊 МОЯ СТАТИСТИКА               ║
-╠════════════════════════════════════════╣
-""")
-        self.stats_text.insert("end", f"║  Всего книг в библиотеке:     {stats['my_books']:>5}          ║\n")
-        self.stats_text.insert("end", f"║  Доступно для обмена:         {stats['available']:>5}          ║\n")
-        self.stats_text.insert("end", f"║  В процессе обмена:           {stats['pending']:>5}          ║\n")
-        self.stats_text.insert("end", f"║  Завершенных обменов:         {stats['completed']:>5}          ║\n")
-        self.stats_text.insert("end", """
-╚════════════════════════════════════════╝
-        """)
+╔════════════════════════════════════════════════════════════╗
+║                    📊 МОЯ СТАТИСТИКА                       ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  📚 БИБЛИОТЕКА:                                            ║
+║     Всего книг в библиотеке:          {:>5}                   ║
+║     Доступно для обмена:              {:>5}                   ║
+║                                                            ║
+║  🔄 ОБМЕНЫ:                                                ║
+║     Входящих запросов (ожидают):      {:>5}                   ║
+║     Исходящих запросов (ожидают):     {:>5}                   ║
+║     Принятых запросов:                {:>5}                   ║
+║     Отклоненных запросов:             {:>5}                   ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+        """.format(
+            book_stats.get('my_books', 0),
+            book_stats.get('available', 0),
+            exchange_stats.get('received_pending', 0),
+            exchange_stats.get('sent_pending', 0),
+            exchange_stats.get('accepted', 0),
+            exchange_stats.get('rejected', 0)
+        ))
 
     def update_profile(self):
         """Обновление профиля"""
