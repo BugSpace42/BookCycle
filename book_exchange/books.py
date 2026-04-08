@@ -210,7 +210,7 @@ class BookManager:
 
         try:
             item_id = db.execute(
-                """INSERT INTO BookItem (book_id, owner_id, condition, status) 
+                """INSERT INTO BookItem (book_id, owner_id, `condition`, status) 
                    VALUES (?, ?, ?, 'available')""",
                 (book_id, auth.current_user['id'], condition)
             )
