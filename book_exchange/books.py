@@ -1,40 +1,14 @@
-"""
-Модуль books.py
-Управление книгами: добавление, редактирование, удаление, поиск книг и экземпляров
-"""
-
 from database import db
 from auth import auth
-from datetime import datetime
-
 
 class BookManager:
-    """Класс для управления книгами и экземплярами"""
-
     def __init__(self):
-        """Инициализация менеджера книг"""
         pass
 
-    # ==================== РАБОТА С КНИГАМИ (ИЗДАНИЯМИ) ====================
-
     def add_book(self, title, author, genre=None, year=None, description=None):
-        """
-        Добавление новой книги (издания)
-
-        Args:
-            title (str): Название книги
-            author (str): Автор
-            genre (str): Жанр
-            year (int): Год издания
-            description (str): Описание
-
-        Returns:
-            tuple: (success: bool, message: str, book_id: int)
-        """
         if not title or not author:
             return False, "Название и автор обязательны для заполнения", None
 
-        # Проверяем, существует ли уже такая книга
         existing = db.fetch_one(
             "SELECT id FROM Book WHERE title = ? AND author = ?",
             (title.strip(), author.strip())
@@ -57,38 +31,14 @@ class BookManager:
             return False, f"Ошибка базы данных: {e}", None
 
     def get_all_books(self):
-        """
-        Получение всех книг из каталога
-
-        Returns:
-            list: Список книг
-        """
         return db.fetch_all(
             "SELECT * FROM Book ORDER BY author, title"
         )
 
     def get_book_by_id(self, book_id):
-        """
-        Получение книги по ID
-
-        Args:
-            book_id (int): ID книги
-
-        Returns:
-            dict: Информация о книге или None
-        """
         return db.fetch_one("SELECT * FROM Book WHERE id = ?", (book_id,))
 
     def search_books(self, keyword):
-        """
-        Поиск книг по ключевому слову (название, автор, жанр)
-
-        Args:
-            keyword (str): Ключевое слово для поиска
-
-        Returns:
-            list: Список найденных книг
-        """
         if not keyword:
             return self.get_all_books()
 
@@ -101,21 +51,6 @@ class BookManager:
         )
 
     def update_book(self, book_id, title=None, author=None, genre=None, year=None, description=None):
-        """
-        Обновление информации о книге
-
-        Args:
-            book_id (int): ID книги
-            title (str): Новое название
-            author (str): Новый автор
-            genre (str): Новый жанр
-            year (int): Новый год издания
-            description (str): Новое описание
-
-        Returns:
-            tuple: (success: bool, message: str)
-        """
-        # Проверяем, существует ли книга
         book = self.get_book_by_id(book_id)
         if not book:
             return False, "Книга не найдена"
@@ -155,16 +90,6 @@ class BookManager:
             return False, f"Ошибка базы данных: {e}"
 
     def delete_book(self, book_id):
-        """
-        Удаление книги и всех её экземпляров (каскадное удаление)
-
-        Args:
-            book_id (int): ID книги
-
-        Returns:
-            tuple: (success: bool, message: str)
-        """
-        # Проверяем, есть ли экземпляры этой книги
         items = db.fetch_all(
             "SELECT * FROM BookItem WHERE book_id = ?",
             (book_id,)
@@ -182,28 +107,14 @@ class BookManager:
         except Exception as e:
             return False, f"Ошибка базы данных: {e}"
 
-    # ==================== РАБОТА С ЭКЗЕМПЛЯРАМИ КНИГ ====================
-
     def add_book_item(self, book_id, condition="good"):
-        """
-        Добавление экземпляра книги (для текущего пользователя)
-
-        Args:
-            book_id (int): ID книги
-            condition (str): Состояние (new, good, fair, poor)
-
-        Returns:
-            tuple: (success: bool, message: str)
-        """
         if not auth.is_authenticated():
             return False, "Пользователь не авторизован"
 
-        # Проверяем, существует ли книга
         book = self.get_book_by_id(book_id)
         if not book:
             return False, "Книга не найдена"
 
-        # Проверяем валидность состояния
         valid_conditions = ["new", "good", "fair", "poor"]
         if condition not in valid_conditions:
             condition = "good"
@@ -222,15 +133,6 @@ class BookManager:
             return False, f"Ошибка базы данных: {e}"
 
     def get_user_items(self, user_id=None):
-        """
-        Получение всех экземпляров книг пользователя
-
-        Args:
-            user_id (int): ID пользователя (если None, берет текущего)
-
-        Returns:
-            list: Список экземпляров с информацией о книгах
-        """
         if user_id is None:
             if not auth.is_authenticated():
                 return []
@@ -246,15 +148,6 @@ class BookManager:
         )
 
     def get_available_items(self, exclude_user_id=None):
-        """
-        Получение всех доступных для обмена экземпляров книг
-
-        Args:
-            exclude_user_id (int): ID пользователя, чьи книги исключить
-
-        Returns:
-            list: Список доступных экземпляров
-        """
         query = """
             SELECT bi.*, b.title, b.author, b.genre, b.year, u.username as owner_name
             FROM BookItem bi
@@ -273,15 +166,6 @@ class BookManager:
         return db.fetch_all(query, params)
 
     def get_item_by_id(self, item_id):
-        """
-        Получение экземпляра книги по ID
-
-        Args:
-            item_id (int): ID экземпляра
-
-        Returns:
-            dict: Информация об экземпляре
-        """
         return db.fetch_one(
             """SELECT bi.*, b.title, b.author, b.genre, b.year, u.username as owner_name
                FROM BookItem bi
@@ -292,16 +176,6 @@ class BookManager:
         )
 
     def update_item_status(self, item_id, status):
-        """
-        Обновление статуса экземпляра книги
-
-        Args:
-            item_id (int): ID экземпляра
-            status (str): Новый статус (available, pending, exchanged)
-
-        Returns:
-            bool: True если успешно
-        """
         valid_statuses = ["available", "pending", "exchanged"]
         if status not in valid_statuses:
             return False
@@ -313,19 +187,9 @@ class BookManager:
         return result is not None
 
     def delete_item(self, item_id):
-        """
-        Удаление экземпляра книги
-
-        Args:
-            item_id (int): ID экземпляра
-
-        Returns:
-            tuple: (success: bool, message: str)
-        """
         if not auth.is_authenticated():
             return False, "Пользователь не авторизован"
 
-        # Проверяем, принадлежит ли экземпляр текущему пользователю
         item = self.get_item_by_id(item_id)
         if not item:
             return False, "Экземпляр не найден"
@@ -333,7 +197,6 @@ class BookManager:
         if item['owner_id'] != auth.current_user['id']:
             return False, "Вы не можете удалить чужой экземпляр книги"
 
-        # Проверяем, не находится ли экземпляр в процессе обмена
         if item['status'] == 'pending':
             return False, "Нельзя удалить экземпляр, который участвует в активном обмене"
 
@@ -347,36 +210,26 @@ class BookManager:
             return False, f"Ошибка базы данных: {e}"
 
     def get_statistics(self):
-        """
-        Получение статистики для текущего пользователя
-
-        Returns:
-            dict: Статистика пользователя
-        """
         if not auth.is_authenticated():
             return {}
 
         user_id = auth.current_user['id']
 
-        # Количество книг пользователя
         my_books = db.fetch_one(
             "SELECT COUNT(*) as count FROM BookItem WHERE owner_id = ?",
             (user_id,)
         )
 
-        # Количество доступных для обмена книг пользователя
         available = db.fetch_one(
             "SELECT COUNT(*) as count FROM BookItem WHERE owner_id = ? AND status = 'available'",
             (user_id,)
         )
 
-        # Количество книг в процессе обмена
         pending = db.fetch_one(
             "SELECT COUNT(*) as count FROM ExchangeRequest WHERE owner_id = ? AND status = 'pending'",
             (user_id,)
         )
 
-        # Количество завершенных обменов
         completed = db.fetch_one(
             """SELECT COUNT(*) as count 
                FROM ExchangeHistory eh
@@ -392,6 +245,4 @@ class BookManager:
             'completed': completed['count'] if completed else 0
         }
 
-
-# Создаем глобальный экземпляр менеджера книг
 book_manager = BookManager()
