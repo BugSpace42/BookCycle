@@ -1,26 +1,10 @@
-"""
-Модуль database.py
-Отвечает за подключение к базе данных MySQL и выполнение SQL-запросов
-"""
-
 import mysql.connector
 from mysql.connector import Error
 from contextlib import contextmanager
 
 
 class Database:
-    """Класс для управления подключением к базе данных MySQL"""
-
     def __init__(self, host="localhost", user="root", password="", database="books_exchange"):
-        """
-        Инициализация базы данных
-
-        Args:
-            host (str): Хост MySQL сервера
-            user (str): Имя пользователя MySQL
-            password (str): Пароль пользователя MySQL
-            database (str): Имя базы данных
-        """
         self.host = host
         self.user = user
         self.password = password
@@ -28,7 +12,6 @@ class Database:
         self._init_database()
 
     def _get_connection_without_db(self):
-        """Создает подключение к MySQL серверу без выбора базы данных"""
         try:
             conn = mysql.connector.connect(
                 host=self.host,
@@ -41,7 +24,6 @@ class Database:
             return None
 
     def _create_database_if_not_exists(self):
-        """Создает базу данных, если она не существует"""
         conn = self._get_connection_without_db()
         if conn:
             try:
@@ -56,11 +38,8 @@ class Database:
                 conn.close()
 
     def _init_database(self):
-        """Создает таблицы, если они не существуют"""
-        # Сначала создаем базу данных
         self._create_database_if_not_exists()
 
-        # SQL-запросы для создания таблиц (адаптированные для MySQL)
         create_tables_queries = [
             # Таблица пользователей
             """
@@ -140,14 +119,6 @@ class Database:
 
     @contextmanager
     def get_connection(self):
-        """
-        Контекстный менеджер для работы с подключением к БД
-
-        Использование:
-            with db.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM Users")
-        """
         conn = None
         try:
             conn = mysql.connector.connect(
@@ -157,7 +128,6 @@ class Database:
                 database=self.database,
                 autocommit=False
             )
-            # Настройка для получения результатов в виде словарей
             conn.row_factory = self._dict_factory
             yield conn
             conn.commit()
@@ -171,7 +141,6 @@ class Database:
                 conn.close()
 
     def _dict_factory(self, cursor, row):
-        """Преобразует строку результата в словарь"""
         return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 
     def execute(self, query, params=None):
@@ -179,7 +148,6 @@ class Database:
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                # Преобразуем ? в %s для MySQL
                 mysql_query = query.replace('?', '%s')
                 cursor.execute(mysql_query, params)
                 conn.commit()
@@ -217,11 +185,9 @@ class Database:
             return None
 
 
-# Создаем глобальный экземпляр базы данных
-# ИЗМЕНИ ПАРАМЕТРЫ ПОД СВОИ НАСТРОЙКИ MySQL!
 db = Database(
-    host="localhost",     # Хост MySQL (обычно localhost)
-    user="root",          # Имя пользователя MySQL
-    password="cGnhD7!!",          # Пароль MySQL (если есть)
-    database="books_exchange"  # Имя базы данных
+    host="localhost",
+    user="root",
+    password="cGnhD7!!",
+    database="books_exchange"
 )

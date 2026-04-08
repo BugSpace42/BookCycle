@@ -4,8 +4,6 @@ from database import db
 from auth import auth
 from books import book_manager
 from exchanges import exchange_manager
-from utils import hash_password, verify_password
-
 
 class LoginWindow:
     def __init__(self):
@@ -187,53 +185,43 @@ class MainWindow:
         self.setup_tabs()
 
     def setup_tabs(self):
-        # Каталог книг для обмена
         self.catalog_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.catalog_tab, text="📖 Каталог для обмена")
+        self.notebook.add(self.catalog_tab, text="Каталог для обмена")
         self.setup_catalog_tab()
 
-        # Все издания (НОВАЯ ВКЛАДКА)
         self.all_editions_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.all_editions_tab, text="📚 Все издания")
+        self.notebook.add(self.all_editions_tab, text="Все издания")
         self.setup_all_editions_tab()
 
-        # Мои книги
         self.my_books_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.my_books_tab, text="📕 Мои книги")
+        self.notebook.add(self.my_books_tab, text="Мои книги")
         self.setup_my_books_tab()
 
-        # Входящие запросы
         self.incoming_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.incoming_tab, text="📨 Входящие запросы")
+        self.notebook.add(self.incoming_tab, text="Входящие запросы")
         self.setup_incoming_tab()
 
-        # Исходящие запросы
         self.outgoing_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.outgoing_tab, text="📤 Исходящие запросы")
+        self.notebook.add(self.outgoing_tab, text="Исходящие запросы")
         self.setup_outgoing_tab()
 
-        # История обменов
         self.history_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.history_tab, text="📜 История обменов")
+        self.notebook.add(self.history_tab, text="История обменов")
         self.setup_history_tab()
 
-        # Добавить книгу
         self.add_book_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.add_book_tab, text="➕ Добавить книгу")
+        self.notebook.add(self.add_book_tab, text="Добавить книгу")
         self.setup_add_book_tab()
 
-        # Статистика
         self.stats_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.stats_tab, text="📊 Статистика")
+        self.notebook.add(self.stats_tab, text="Статистика")
         self.setup_stats_tab()
 
-        # Профиль
         self.profile_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.profile_tab, text="👤 Профиль")
+        self.notebook.add(self.profile_tab, text="Профиль")
         self.setup_profile_tab()
 
     def setup_catalog_tab(self):
-        """Вкладка каталога книг для обмена (только чужие книги)"""
         search_frame = ttk.Frame(self.catalog_tab)
         search_frame.pack(fill="x", padx=10, pady=10)
 
@@ -280,9 +268,6 @@ class MainWindow:
         self.load_catalog()
 
     def setup_all_editions_tab(self):
-        """Вкладка со всеми изданиями книг"""
-
-        # Верхняя панель с поиском
         search_frame = ttk.Frame(self.all_editions_tab)
         search_frame.pack(fill="x", padx=10, pady=10)
 
@@ -293,16 +278,13 @@ class MainWindow:
 
         ttk.Button(search_frame, text="Очистить", command=self.clear_editions_search).pack(side="left", padx=5)
 
-        # Информационная метка
-        info_label = ttk.Label(search_frame, text="💡 Зеленым выделены книги, которые уже есть в вашей библиотеке",
+        info_label = ttk.Label(search_frame, text="Зеленым выделены книги, которые уже есть в вашей библиотеке",
                                foreground="green")
         info_label.pack(side="right", padx=10)
 
-        # Таблица для отображения изданий
         columns = ("id", "title", "author", "genre", "year", "total_copies", "my_copies", "available_copies")
         self.editions_tree = ttk.Treeview(self.all_editions_tab, columns=columns, show="headings", height=20)
 
-        # Настройка заголовков
         self.editions_tree.heading("id", text="ID")
         self.editions_tree.heading("title", text="Название")
         self.editions_tree.heading("author", text="Автор")
@@ -312,7 +294,6 @@ class MainWindow:
         self.editions_tree.heading("my_copies", text="Мои экз.")
         self.editions_tree.heading("available_copies", text="Доступно для обмена")
 
-        # Настройка ширины колонок
         self.editions_tree.column("id", width=50, minwidth=50)
         self.editions_tree.column("title", width=280, minwidth=150)
         self.editions_tree.column("author", width=200, minwidth=120)
@@ -322,14 +303,12 @@ class MainWindow:
         self.editions_tree.column("my_copies", width=90, minwidth=80)
         self.editions_tree.column("available_copies", width=130, minwidth=100)
 
-        # Скроллбар
         scrollbar = ttk.Scrollbar(self.all_editions_tab, orient="vertical", command=self.editions_tree.yview)
         self.editions_tree.configure(yscrollcommand=scrollbar.set)
 
         self.editions_tree.pack(side="left", fill="both", expand=True, padx=(10, 0), pady=10)
         scrollbar.pack(side="right", fill="y", padx=(0, 10), pady=10)
 
-        # Нижняя панель с кнопками
         btn_frame = ttk.Frame(self.all_editions_tab)
         btn_frame.pack(fill="x", padx=10, pady=5)
 
@@ -340,14 +319,11 @@ class MainWindow:
         ttk.Button(btn_frame, text="ℹ️ Подробнее о книге",
                    command=self.show_edition_details).pack(side="left", padx=5)
 
-        # Двойной клик для добавления экземпляра
         self.editions_tree.bind('<Double-Button-1>', lambda e: self.add_copy_from_edition())
 
-        # Загружаем данные
         self.load_all_editions()
 
     def setup_my_books_tab(self):
-        """Вкладка моих книг"""
         columns = ("id", "title", "author", "condition", "status", "added_at")
         self.my_books_tree = ttk.Treeview(self.my_books_tab, columns=columns, show="headings", height=20)
 
@@ -380,7 +356,6 @@ class MainWindow:
         self.load_my_books()
 
     def setup_incoming_tab(self):
-        """Вкладка входящих запросов"""
         columns = ("id", "book", "author", "requester", "requested_at")
         self.incoming_tree = ttk.Treeview(self.incoming_tab, columns=columns, show="headings", height=15)
 
@@ -412,7 +387,6 @@ class MainWindow:
         self.load_incoming()
 
     def setup_outgoing_tab(self):
-        """Вкладка исходящих запросов"""
         columns = ("id", "book", "author", "owner", "requested_at")
         self.outgoing_tree = ttk.Treeview(self.outgoing_tab, columns=columns, show="headings", height=15)
 
@@ -437,13 +411,12 @@ class MainWindow:
         btn_frame = ttk.Frame(self.outgoing_tab)
         btn_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="❌ Отменить запрос", command=self.cancel_request).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="🔄 Обновить", command=self.load_outgoing).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Отменить запрос", command=self.cancel_request).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Обновить", command=self.load_outgoing).pack(side="left", padx=5)
 
         self.load_outgoing()
 
     def setup_history_tab(self):
-        """Вкладка истории обменов"""
         columns = ("id", "direction", "book", "author", "other_user", "completed_at")
         self.history_tree = ttk.Treeview(self.history_tab, columns=columns, show="headings", height=20)
 
@@ -470,12 +443,11 @@ class MainWindow:
         btn_frame = ttk.Frame(self.history_tab)
         btn_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="🔄 Обновить", command=self.load_history).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Обновить", command=self.load_history).pack(side="left", padx=5)
 
         self.load_history()
 
     def setup_add_book_tab(self):
-        """Вкладка добавления новой книги"""
         form_frame = ttk.LabelFrame(self.add_book_tab, text="Информация о книге", padding="20")
         form_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
@@ -528,11 +500,10 @@ class MainWindow:
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
 
-        ttk.Button(btn_frame, text="➕ Добавить книгу в каталог", command=self.add_book).pack(side="left", padx=10)
-        ttk.Button(btn_frame, text="🗑️ Очистить форму", command=self.clear_add_form).pack(side="left", padx=10)
+        ttk.Button(btn_frame, text="Добавить книгу в каталог", command=self.add_book).pack(side="left", padx=10)
+        ttk.Button(btn_frame, text="Очистить форму", command=self.clear_add_form).pack(side="left", padx=10)
 
     def setup_stats_tab(self):
-        """Вкладка статистики"""
         self.stats_text = scrolledtext.ScrolledText(
             self.stats_tab,
             font=("Courier", 11),
@@ -543,12 +514,11 @@ class MainWindow:
 
         btn_frame = ttk.Frame(self.stats_tab)
         btn_frame.pack(pady=(0, 20))
-        ttk.Button(btn_frame, text="🔄 Обновить статистику", command=self.load_stats).pack()
+        ttk.Button(btn_frame, text="Обновить статистику", command=self.load_stats).pack()
 
         self.load_stats()
 
     def setup_profile_tab(self):
-        """Вкладка профиля"""
         user = auth.get_current_user()
 
         form_frame = ttk.LabelFrame(self.profile_tab, text="Информация о пользователе", padding="20")
@@ -595,11 +565,10 @@ class MainWindow:
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=5, column=0, columnspan=2, pady=20)
 
-        ttk.Button(btn_frame, text="💾 Сохранить изменения", command=self.update_profile).pack(side="left", padx=10)
-        ttk.Button(btn_frame, text="🚪 Выйти из системы", command=self.logout).pack(side="left", padx=10)
+        ttk.Button(btn_frame, text="Сохранить изменения", command=self.update_profile).pack(side="left", padx=10)
+        ttk.Button(btn_frame, text="Выйти из системы", command=self.logout).pack(side="left", padx=10)
 
     def load_catalog(self):
-        """Загрузка каталога доступных для обмена книг (чужих)"""
         for item in self.catalog_tree.get_children():
             self.catalog_tree.delete(item)
 
@@ -621,16 +590,13 @@ class MainWindow:
             ))
 
     def load_all_editions(self):
-        """Загрузка всех изданий с информацией о количестве экземпляров"""
         # Очищаем таблицу
         for item in self.editions_tree.get_children():
             self.editions_tree.delete(item)
 
-        # Получаем все издания
         books = book_manager.get_all_books()
 
         if not books:
-            # Показываем сообщение, если книг нет
             self.editions_tree.insert("", "end", values=(
                 "", "Нет книг в каталоге", "", "", "", "", "", ""
             ))
@@ -640,21 +606,18 @@ class MainWindow:
 
         for book in books:
             try:
-                # Считаем общее количество экземпляров
                 total_result = db.fetch_one(
                     "SELECT COUNT(*) as count FROM BookItem WHERE book_id = ?",
                     (book['id'],)
                 )
                 total = total_result['count'] if total_result else 0
 
-                # Считаем количество экземпляров пользователя
                 my_copies_result = db.fetch_one(
                     "SELECT COUNT(*) as count FROM BookItem WHERE book_id = ? AND owner_id = ?",
                     (book['id'], user_id)
                 )
                 my_copies = my_copies_result['count'] if my_copies_result else 0
 
-                # Считаем количество доступных для обмена
                 available_result = db.fetch_one(
                     """SELECT COUNT(*) as count FROM BookItem 
                        WHERE book_id = ? AND status = 'available' AND owner_id != ?""",
@@ -662,7 +625,6 @@ class MainWindow:
                 )
                 available = available_result['count'] if available_result else 0
 
-                # Определяем цвет строки (если есть у пользователя)
                 tag = 'has_copy' if my_copies > 0 else ''
 
                 self.editions_tree.insert("", "end", values=(
@@ -679,11 +641,9 @@ class MainWindow:
                 print(f"Ошибка при загрузке книги {book.get('title')}: {e}")
                 continue
 
-        # Настройка цветов
         self.editions_tree.tag_configure('has_copy', background='#e6f3e6')  # Светло-зеленый
 
     def load_my_books(self):
-        """Загрузка моих книг"""
         for item in self.my_books_tree.get_children():
             self.my_books_tree.delete(item)
 
@@ -703,7 +663,6 @@ class MainWindow:
             ))
 
     def load_incoming(self):
-        """Загрузка входящих запросов"""
         for item in self.incoming_tree.get_children():
             self.incoming_tree.delete(item)
 
@@ -719,7 +678,6 @@ class MainWindow:
             ))
 
     def load_outgoing(self):
-        """Загрузка исходящих запросов"""
         for item in self.outgoing_tree.get_children():
             self.outgoing_tree.delete(item)
 
@@ -735,7 +693,6 @@ class MainWindow:
             ))
 
     def load_history(self):
-        """Загрузка истории обменов"""
         for item in self.history_tree.get_children():
             self.history_tree.delete(item)
 
@@ -754,7 +711,6 @@ class MainWindow:
             ))
 
     def search_books(self):
-        """Поиск книг в каталоге"""
         keyword = self.search_entry.get().strip()
         if not keyword:
             self.load_catalog()
@@ -789,18 +745,15 @@ class MainWindow:
                 ))
 
     def search_editions(self):
-        """Поиск по изданиям"""
         keyword = self.editions_search_entry.get().strip()
 
         if not keyword:
             self.load_all_editions()
             return
 
-        # Очищаем таблицу
         for item in self.editions_tree.get_children():
             self.editions_tree.delete(item)
 
-        # Ищем книги
         books = book_manager.search_books(keyword)
         user_id = auth.current_user['id']
 
@@ -835,17 +788,14 @@ class MainWindow:
             ), tags=(tag,))
 
     def clear_search(self):
-        """Очистка поиска в каталоге"""
         self.search_entry.delete(0, tk.END)
         self.load_catalog()
 
     def clear_editions_search(self):
-        """Очистка поиска по изданиям"""
         self.editions_search_entry.delete(0, tk.END)
         self.load_all_editions()
 
     def request_exchange(self):
-        """Запрос на обмен"""
         selected = self.catalog_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите книгу для запроса")
@@ -859,25 +809,22 @@ class MainWindow:
                 messagebox.showinfo("Успех", message)
                 self.load_catalog()
                 self.load_outgoing()
-                self.load_all_editions()  # Обновляем и список изданий
+                self.load_all_editions()
             else:
                 messagebox.showerror("Ошибка", message)
 
     def add_copy_from_edition(self):
-        """Добавление экземпляра выбранного издания"""
         selected = self.editions_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите издание книги")
             return
 
-        # Получаем book_id
         values = self.editions_tree.item(selected[0])['values']
         book_id = values[0]
         book_title = values[1]
         book_author = values[2]
 
-        # Проверяем, не превышен ли лимит (опционально)
-        my_copies = values[6]  # Мои экземпляры
+        my_copies = values[6]
 
         if my_copies >= 10:
             if not messagebox.askyesno("Подтверждение",
@@ -885,7 +832,6 @@ class MainWindow:
                                        "Вы уверены, что хотите добавить ещё один?"):
                 return
 
-        # Диалог выбора состояния
         dialog = tk.Toplevel(self.window)
         dialog.title("Добавление экземпляра")
         dialog.geometry("400x320")
@@ -893,47 +839,40 @@ class MainWindow:
         dialog.grab_set()
         dialog.resizable(False, False)
 
-        # Центрируем окно (исправленный способ)
         dialog.update_idletasks()
         x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
         y = (dialog.winfo_screenheight() // 2) - (320 // 2)
         dialog.geometry(f"400x320+{x}+{y}")
 
-        # Основной фрейм
         main_frame = ttk.Frame(dialog, padding="15")
         main_frame.pack(fill="both", expand=True)
 
-        # Информация о книге
         info_frame = ttk.LabelFrame(main_frame, text="Информация о книге", padding="10")
         info_frame.pack(fill="x", pady=(0, 10))
 
-        # Название книги
         ttk.Label(info_frame, text="Название:", font=("Arial", 10, "bold")).grid(row=0, column=0, sticky="w", pady=2)
         title_label = ttk.Label(info_frame, text=book_title, font=("Arial", 10), wraplength=250)
         title_label.grid(row=0, column=1, sticky="w", pady=2, padx=(10, 0))
 
-        # Автор
         ttk.Label(info_frame, text="Автор:", font=("Arial", 10, "bold")).grid(row=1, column=0, sticky="w", pady=2)
         ttk.Label(info_frame, text=book_author, font=("Arial", 10)).grid(row=1, column=1, sticky="w", pady=2,
                                                                          padx=(10, 0))
 
         info_frame.columnconfigure(1, weight=1)
 
-        # Выбор состояния
         condition_frame = ttk.LabelFrame(main_frame, text="Состояние книги", padding="10")
         condition_frame.pack(fill="x", pady=(0, 15))
 
         condition_var = tk.StringVar(value="good")
 
-        # Используем фрейм для радиокнопок
         radio_frame = ttk.Frame(condition_frame)
         radio_frame.pack(fill="x")
 
         conditions = [
-            ("📗 Новая", "new"),
-            ("📘 Хорошее", "good"),
-            ("📙 Удовлетворительное", "fair"),
-            ("📕 Плохое", "poor")
+            ("Новая", "new"),
+            ("Хорошее", "good"),
+            ("Удовлетворительное", "fair"),
+            ("Плохое", "poor")
         ]
 
         for i, (text, value) in enumerate(conditions):
@@ -946,7 +885,6 @@ class MainWindow:
         radio_frame.columnconfigure(0, weight=1)
         radio_frame.columnconfigure(1, weight=1)
 
-        # Кнопки
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill="x", pady=(10, 0))
 
@@ -957,7 +895,6 @@ class MainWindow:
             if success:
                 messagebox.showinfo("Успех", message)
                 dialog.destroy()
-                # Обновляем все связанные вкладки
                 self.load_all_editions()
                 self.load_my_books()
                 self.load_catalog()
@@ -965,18 +902,15 @@ class MainWindow:
             else:
                 messagebox.showerror("Ошибка", message)
 
-        ttk.Button(btn_frame, text="✅ Добавить", command=confirm_add, width=15).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="❌ Отмена", command=dialog.destroy, width=15).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Добавить", command=confirm_add, width=15).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Отмена", command=dialog.destroy, width=15).pack(side="right", padx=5)
 
-        # Делаем окно модальным
         dialog.focus_force()
 
-        # Привязываем Enter к кнопке добавления
         dialog.bind('<Return>', lambda e: confirm_add())
         dialog.bind('<Escape>', lambda e: dialog.destroy())
 
     def show_edition_details(self):
-        """Показать подробную информацию об издании"""
         selected = self.editions_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите издание книги")
@@ -985,49 +919,41 @@ class MainWindow:
         values = self.editions_tree.item(selected[0])['values']
         book_id = values[0]
 
-        # Получаем полную информацию о книге
         book = book_manager.get_book_by_id(book_id)
         if not book:
             messagebox.showerror("Ошибка", "Книга не найдена")
             return
 
-        # Создаем окно с деталями
         details = tk.Toplevel(self.window)
         details.title(f"Информация о книге: {book['title']}")
         details.geometry("550x500")
         details.transient(self.window)
         details.grab_set()
 
-        # Центрируем окно (исправленный способ)
         details.update_idletasks()
         x = (details.winfo_screenwidth() // 2) - (550 // 2)
         y = (details.winfo_screenheight() // 2) - (500 // 2)
         details.geometry(f"550x500+{x}+{y}")
 
-        # Создаем текстовое поле с прокруткой
         text_widget = scrolledtext.ScrolledText(details, wrap=tk.WORD, font=("Arial", 10))
         text_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Формируем информацию
         info = f"""
-    ╔══════════════════════════════════════════════════════════════╗
-    ║                    ИНФОРМАЦИЯ О КНИГЕ                        ║
-    ╚══════════════════════════════════════════════════════════════╝
+                         ИНФОРМАЦИЯ О КНИГЕ
 
-    📖 Название: {book['title']}
-    ✍️ Автор: {book['author']}
-    🎭 Жанр: {book['genre'] or 'Не указан'}
-    📅 Год издания: {book['year'] or 'Не указан'}
+    Название: {book['title']}
+    Автор: {book['author']}
+    Жанр: {book['genre'] or 'Не указан'}
+    Год издания: {book['year'] or 'Не указан'}
 
-    📝 Описание:
+    Описание:
     {book['description'] or 'Описание отсутствует'}
 
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    📊 Статистика по экземплярам:
+    Статистика по экземплярам:
     """
 
-        # Добавляем статистику по экземплярам
         stats = db.fetch_all(
             """SELECT status, COUNT(*) as count 
                FROM BookItem 
@@ -1037,9 +963,9 @@ class MainWindow:
         )
 
         status_names = {
-            'available': '🟢 Доступно для обмена',
-            'pending': '🟡 В процессе обмена',
-            'exchanged': '🔴 Обменено'
+            'available': 'Доступно для обмена',
+            'pending': 'В процессе обмена',
+            'exchanged': 'Обменено'
         }
 
         if stats:
@@ -1049,7 +975,6 @@ class MainWindow:
         else:
             info += "\n   • Нет экземпляров в системе"
 
-        # Добавляем информацию о владельцах (только доступные)
         owners = db.fetch_all(
             """SELECT DISTINCT u.username, bi.condition, bi.status
                FROM BookItem bi
@@ -1060,8 +985,8 @@ class MainWindow:
         )
 
         if owners:
-            info += "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            info += "👥 Владельцы доступных экземпляров:\n"
+            info += "\n\n"
+            info += "Владельцы доступных экземпляров:\n"
             condition_map = {"new": "Новая", "good": "Хорошее", "fair": "Удовл.", "poor": "Плохое"}
             for owner in owners:
                 info += f"\n   • {owner['username']} (Состояние: {condition_map.get(owner['condition'], owner['condition'])})"
@@ -1070,7 +995,6 @@ class MainWindow:
         text_widget.configure(state='disabled')  # Делаем поле только для чтения
 
     def accept_request(self):
-        """Принятие запроса на обмен"""
         selected = self.incoming_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите запрос")
@@ -1085,12 +1009,11 @@ class MainWindow:
                 self.load_incoming()
                 self.load_my_books()
                 self.load_history()
-                self.load_all_editions()  # Обновляем список изданий
+                self.load_all_editions()
             else:
                 messagebox.showerror("Ошибка", message)
 
     def reject_request(self):
-        """Отклонение запроса на обмен"""
         selected = self.incoming_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите запрос")
@@ -1109,7 +1032,6 @@ class MainWindow:
                 messagebox.showerror("Ошибка", message)
 
     def cancel_request(self):
-        """Отмена исходящего запроса"""
         selected = self.outgoing_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите запрос")
@@ -1128,7 +1050,6 @@ class MainWindow:
                 messagebox.showerror("Ошибка", message)
 
     def add_book(self):
-        """Добавление новой книги"""
         title = self.title_entry.get().strip()
         author = self.author_entry.get().strip()
         genre = self.genre_combo.get().strip()
@@ -1177,7 +1098,6 @@ class MainWindow:
                 messagebox.showerror("Ошибка", message)
 
     def clear_add_form(self):
-        """Очистка формы добавления книги"""
         self.title_entry.delete(0, tk.END)
         self.author_entry.delete(0, tk.END)
         self.genre_combo.set("")
@@ -1186,7 +1106,6 @@ class MainWindow:
         self.condition_var.set("good")
 
     def delete_my_book(self):
-        """Удаление экземпляра книги"""
         selected = self.my_books_tree.selection()
         if not selected:
             messagebox.showwarning("Внимание", "Выберите книгу для удаления")
@@ -1200,37 +1119,30 @@ class MainWindow:
                 messagebox.showinfo("Успех", message)
                 self.load_my_books()
                 self.load_catalog()
-                self.load_all_editions()  # Обновляем список изданий
+                self.load_all_editions()
                 self.load_stats()
             else:
                 messagebox.showerror("Ошибка", message)
 
     def load_stats(self):
-        """Загрузка статистики"""
         book_stats = book_manager.get_statistics()
         exchange_stats = exchange_manager.get_statistics()
 
         self.stats_text.delete("1.0", tk.END)
         self.stats_text.insert("1.0", f"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                              СТАТИСТИКА ПОЛЬЗОВАТЕЛЯ                         ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                              ║
-║  📚 БИБЛИОТЕКА:                                                              ║
-║     Всего книг в библиотеке:                         {book_stats.get('my_books', 0):>5}     ║
-║     Доступно для обмена:                             {book_stats.get('available', 0):>5}     ║
-║                                                                              ║
-║  🔄 ОБМЕНЫ:                                                                  ║
-║     Входящих запросов (ожидают ответа):              {exchange_stats.get('received_pending', 0):>5}     ║
-║     Исходящих запросов (ожидают ответа):             {exchange_stats.get('sent_pending', 0):>5}     ║
-║     Принятых запросов:                               {exchange_stats.get('accepted', 0):>5}     ║
-║     Отклоненных запросов:                            {exchange_stats.get('rejected', 0):>5}     ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+                               СТАТИСТИКА ПОЛЬЗОВАТЕЛЯ
+      БИБЛИОТЕКА:
+      Всего книг в библиотеке: {book_stats.get('my_books', 0):>5}
+      Доступно для обмена: {book_stats.get('available', 0):>5}
+
+      ОБМЕНЫ:
+      Входящих запросов (ожидают ответа): {exchange_stats.get('received_pending', 0):>5}
+      Исходящих запросов (ожидают ответа): {exchange_stats.get('sent_pending', 0):>5}
+      Принятых запросов: {exchange_stats.get('accepted', 0):>5}
+      Отклоненных запросов: {exchange_stats.get('rejected', 0):>5}
         """)
 
     def update_profile(self):
-        """Обновление профиля"""
         email = self.profile_email.get().strip()
         phone = self.profile_phone.get().strip()
 
@@ -1241,7 +1153,6 @@ class MainWindow:
             messagebox.showerror("Ошибка", message)
 
     def logout(self):
-        """Выход из системы"""
         if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите выйти из системы?"):
             success, message = auth.logout()
             if success:
